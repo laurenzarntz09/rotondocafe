@@ -216,7 +216,7 @@
         <img id="preview-img" alt="Vorschau">
         <button type="button" class="remove-image" id="remove-image">Bild entfernen</button>
       </div>
-      <p class="upload-progress" id="upload-progress">Bild wird hochgeladen …</p>
+      <p class="upload-progress" id="upload-progress">Bild wird verkleinert …</p>
 
       <button class="btn btn-solid" type="submit">Veröffentlichen</button>
     </form>
@@ -238,15 +238,11 @@
   import {
     getFirestore, collection, addDoc, query, orderBy, getDocs, deleteDoc, doc, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-  import {
-    getStorage, ref, uploadBytes, getDownloadURL, deleteObject
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
   import { firebaseConfig } from "./firebase-config.js";
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  const storage = getStorage(app);
 
   const loginBox = document.getElementById('login-box');
   const adminBox = document.getElementById('admin-box');
@@ -284,24 +280,64 @@
   const previewWrap = document.getElementById('preview-wrap');
   const previewImg = document.getElementById('preview-img');
   const uploadProgress = document.getElementById('upload-progress');
-  let selectedFile = null;
+  let selectedImageDataUrl = null;
 
-  imageInput.addEventListener('change', () => {
+  // Verkleinert und komprimiert ein Bild im Browser, bevor es gespeichert wird.
+  // So bleibt jedes Foto klein genug, um direkt in der Datenbank gespeichert
+  // zu werden (kein separater Speicherdienst nötig, kostenlos).
+  function resizeAndCompressImage(file, maxDimension = 1200, quality = 0.75) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      reader.onerror = reject;
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxDimension) {
+          height = Math.round(height * (maxDimension / width));
+          width = maxDimension;
+        } else if (height > maxDimension) {
+          width = Math.round(width * (maxDimension / height));
+          height = maxDimension;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  imageInput.addEventListener('change', async () => {
     const file = imageInput.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      postError.textContent = 'Das Bild ist zu groß (max. 5 MB).';
-      imageInput.value = '';
-      return;
-    }
     postError.textContent = '';
-    selectedFile = file;
-    previewImg.src = URL.createObjectURL(file);
-    previewWrap.style.display = 'block';
+    uploadProgress.textContent = 'Bild wird verkleinert …';
+    uploadProgress.style.display = 'block';
+    try {
+      let dataUrl = await resizeAndCompressImage(file, 1200, 0.75);
+      // Falls die Datenbank-Obergrenze (1 MB pro Eintrag) trotzdem knapp wird,
+      // nochmal stärker verkleinern.
+      if (dataUrl.length > 700 * 1024) {
+        dataUrl = await resizeAndCompressImage(file, 900, 0.6);
+      }
+      selectedImageDataUrl = dataUrl;
+      previewImg.src = dataUrl;
+      previewWrap.style.display = 'block';
+    } catch (err) {
+      postError.textContent = 'Bild konnte nicht verarbeitet werden. Bitte anderes Foto versuchen.';
+      console.error(err);
+      imageInput.value = '';
+    } finally {
+      uploadProgress.style.display = 'none';
+    }
   });
 
   document.getElementById('remove-image').addEventListener('click', () => {
-    selectedFile = null;
+    selectedImageDataUrl = null;
     imageInput.value = '';
     previewWrap.style.display = 'none';
   });
@@ -315,31 +351,17 @@
     const date = dateInput ? formatDate(dateInput) : formatDate(new Date().toISOString().slice(0, 10));
 
     try {
-      let imageUrl = null;
-      let imagePath = null;
-
-      if (selectedFile) {
-        uploadProgress.style.display = 'block';
-        imagePath = `news/${Date.now()}_${selectedFile.name}`;
-        const imageRef = ref(storage, imagePath);
-        await uploadBytes(imageRef, selectedFile);
-        imageUrl = await getDownloadURL(imageRef);
-        uploadProgress.style.display = 'none';
-      }
-
       await addDoc(collection(db, "news"), {
         title, text, date,
-        imageUrl: imageUrl || null,
-        imagePath: imagePath || null,
+        imageUrl: selectedImageDataUrl || null,
         createdAt: serverTimestamp()
       });
 
       e.target.reset();
-      selectedFile = null;
+      selectedImageDataUrl = null;
       previewWrap.style.display = 'none';
       loadExisting();
     } catch (err) {
-      uploadProgress.style.display = 'none';
       postError.textContent = 'Konnte nicht veröffentlicht werden. Bitte nochmal versuchen.';
       console.error(err);
     }
@@ -386,9 +408,6 @@
       delBtn.addEventListener('click', async () => {
         if (confirm('Diese Neuigkeit wirklich löschen?')) {
           await deleteDoc(doc(db, "news", docSnap.id));
-          if (n.imagePath) {
-            try { await deleteObject(ref(storage, n.imagePath)); } catch (err) { console.warn('Bild konnte nicht gelöscht werden:', err); }
-          }
           loadExisting();
         }
       });
