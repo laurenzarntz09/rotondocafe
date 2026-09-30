@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rotondo – Neuigkeiten verwalten</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream: #EDE3D0;
+    --cream-light: #F7F1E4;
+    --espresso: #3A2A1E;
+    --espresso-soft: #5B4535;
+    --copper: #B54A1F;
+    --forest: #3F5C3A;
+    --mustard: #D9A441;
+    --line: rgba(58,42,30,0.16);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--cream);
+    color:var(--espresso);
+    font-family:'Karla', sans-serif;
+    display:flex;
+    justify-content:center;
+    padding:60px 20px;
+  }
+  h1,h2{ font-family:'Fraunces', serif; font-weight:600; margin:0; }
+  .wrap{ width:100%; max-width:520px; }
+  .logo{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.3rem;
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:36px;
+  }
+  .logo .dot{ width:11px; height:11px; border-radius:50%; background:var(--copper); }
+
+  .card{
+    background:var(--cream-light);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:32px 30px;
+    margin-bottom:24px;
+  }
+  .card h1{ font-size:1.6rem; margin-bottom:22px; }
+
+  label{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--espresso-soft);
+    margin-bottom:6px;
+    margin-top:18px;
+  }
+  label:first-of-type{ margin-top:0; }
+  input, textarea{
+    width:100%;
+    font-family:'Karla', sans-serif;
+    font-size:1rem;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:#fff;
+    color:var(--espresso);
+  }
+  textarea{ resize:vertical; }
+  input:focus, textarea:focus{
+    outline:2px solid var(--copper);
+    outline-offset:1px;
+  }
+
+  .btn{
+    font-family:'Karla',sans-serif;
+    font-weight:700;
+    font-size:0.92rem;
+    padding:12px 22px;
+    border-radius:100px;
+    border:1.5px solid var(--espresso);
+    cursor:pointer;
+    transition:transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .btn-solid{ background:var(--espresso); color:var(--cream-light); }
+  .btn-solid:hover{ background:var(--copper); border-color:var(--copper); transform:translateY(-1px); }
+  .btn-ghost{ background:transparent; color:var(--espresso); }
+  .btn-ghost:hover{ background:var(--espresso); color:var(--cream-light); }
+  .btn-ghost.small{ padding:7px 14px; font-size:0.78rem; }
+
+  form .btn{ margin-top:22px; width:100%; }
+  #login-box .btn{ margin-top:22px; width:100%; }
+
+  .error{
+    color:var(--copper);
+    font-size:0.85rem;
+    margin-top:14px;
+    min-height:1em;
+  }
+
+  .admin-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:22px;
+  }
+
+  .existing-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .existing-item:last-child{ border-bottom:none; }
+  .muted{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    color:var(--espresso-soft);
+  }
+  .hint{
+    font-size:0.85rem;
+    color:var(--espresso-soft);
+  }
+
+  input[type="file"]{
+    padding:10px 14px;
+    background:#fff;
+    cursor:pointer;
+  }
+  .preview-wrap{
+    margin-top:12px;
+    display:none;
+  }
+  .preview-wrap img{
+    max-width:100%;
+    max-height:180px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    display:block;
+  }
+  .remove-image{
+    margin-top:8px;
+    background:none;
+    border:none;
+    color:var(--copper);
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    text-decoration:underline;
+    cursor:pointer;
+    padding:0;
+  }
+  .upload-progress{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.75rem;
+    color:var(--espresso-soft);
+    margin-top:8px;
+    display:none;
+  }
+  .existing-item{ align-items:flex-start; }
+  .existing-item img{
+    width:48px;
+    height:48px;
+    object-fit:cover;
+    border-radius:8px;
+    border:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .existing-item .row-main{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="logo"><span class="dot"></span>Rotondo · Verwaltung</div>
+
+  <div id="login-box" class="card">
+    <h1>Anmelden</h1>
+    <label for="email">E-Mail</label>
+    <input id="email" type="email" autocomplete="username">
+    <label for="password">Passwort</label>
+    <input id="password" type="password" autocomplete="current-password">
+    <button id="login-btn" class="btn btn-solid" type="button">Anmelden</button>
+    <p id="login-error" class="error"></p>
+  </div>
+
+  <div id="admin-box" class="card" style="display:none;">
+    <div class="admin-header">
+      <h1>Neuigkeit posten</h1>
+      <button id="logout-btn" class="btn btn-ghost small" type="button">Abmelden</button>
+    </div>
+
+    <form id="news-form">
+      <label for="title">Titel</label>
+      <input id="title" type="text" required placeholder="z. B. Diesen Samstag später am Stand">
+
+      <label for="text">Text</label>
+      <textarea id="text" rows="4" required placeholder="Kurze Nachricht für deine Kund*innen …"></textarea>
+
+      <label for="date">Datum</label>
+      <input id="date" type="date">
+
+      <label for="image">Bild (optional)</label>
+      <input id="image" type="file" accept="image/*">
+      <div class="preview-wrap" id="preview-wrap">
+        <img id="preview-img" alt="Vorschau">
+        <button type="button" class="remove-image" id="remove-image">Bild entfernen</button>
+      </div>
+      <p class="upload-progress" id="upload-progress">Bild wird hochgeladen …</p>
+
+      <button class="btn btn-solid" type="submit">Veröffentlichen</button>
+    </form>
+    <p id="post-error" class="error"></p>
+  </div>
+
+  <div id="list-box" class="card" style="display:none;">
+    <h2 style="font-size:1.2rem; margin-bottom:16px;">Bisherige Neuigkeiten</h2>
+    <p class="hint" id="list-hint">Lädt …</p>
+    <div id="existing-list"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, query, orderBy, getDocs, deleteDoc, doc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+  import { firebaseConfig } from "./firebase-config.js";
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+
+  const loginBox = document.getElementById('login-box');
+  const adminBox = document.getElementById('admin-box');
+  const listBox = document.getElementById('list-box');
+  const loginError = document.getElementById('login-error');
+  const postError = document.getElementById('post-error');
+
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    loginError.textContent = '';
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      loginError.textContent = 'Anmeldung fehlgeschlagen. E-Mail oder Passwort prüfen.';
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loginBox.style.display = 'none';
+      adminBox.style.display = 'block';
+      listBox.style.display = 'block';
+      loadExisting();
+    } else {
+      loginBox.style.display = 'block';
+      adminBox.style.display = 'none';
+      listBox.style.display = 'none';
+    }
+  });
+
+  const imageInput = document.getElementById('image');
+  const previewWrap = document.getElementById('preview-wrap');
+  const previewImg = document.getElementById('preview-img');
+  const uploadProgress = document.getElementById('upload-progress');
+  let selectedFile = null;
+
+  imageInput.addEventListener('change', () => {
+    const file = imageInput.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      postError.textContent = 'Das Bild ist zu groß (max. 5 MB).';
+      imageInput.value = '';
+      return;
+    }
+    postError.textContent = '';
+    selectedFile = file;
+    previewImg.src = URL.createObjectURL(file);
+    previewWrap.style.display = 'block';
+  });
+
+  document.getElementById('remove-image').addEventListener('click', () => {
+    selectedFile = null;
+    imageInput.value = '';
+    previewWrap.style.display = 'none';
+  });
+
+  document.getElementById('news-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    postError.textContent = '';
+    const title = document.getElementById('title').value.trim();
+    const text = document.getElementById('text').value.trim();
+    const dateInput = document.getElementById('date').value;
+    const date = dateInput ? formatDate(dateInput) : formatDate(new Date().toISOString().slice(0, 10));
+
+    try {
+      let imageUrl = null;
+      let imagePath = null;
+
+      if (selectedFile) {
+        uploadProgress.style.display = 'block';
+        imagePath = `news/${Date.now()}_${selectedFile.name}`;
+        const imageRef = ref(storage, imagePath);
+        await uploadBytes(imageRef, selectedFile);
+        imageUrl = await getDownloadURL(imageRef);
+        uploadProgress.style.display = 'none';
+      }
+
+      await addDoc(collection(db, "news"), {
+        title, text, date,
+        imageUrl: imageUrl || null,
+        imagePath: imagePath || null,
+        createdAt: serverTimestamp()
+      });
+
+      e.target.reset();
+      selectedFile = null;
+      previewWrap.style.display = 'none';
+      loadExisting();
+    } catch (err) {
+      uploadProgress.style.display = 'none';
+      postError.textContent = 'Konnte nicht veröffentlicht werden. Bitte nochmal versuchen.';
+      console.error(err);
+    }
+  });
+
+  function formatDate(isoStr) {
+    const [y, m, d] = isoStr.split('-');
+    return `${d}.${m}.${y}`;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+
+  async function loadExisting() {
+    const list = document.getElementById('existing-list');
+    const hint = document.getElementById('list-hint');
+    hint.textContent = 'Lädt …';
+    list.innerHTML = '';
+
+    const q = query(collection(db, "news"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      hint.textContent = 'Noch keine Einträge.';
+      return;
+    }
+    hint.textContent = '';
+
+    snap.forEach((docSnap) => {
+      const n = docSnap.data();
+      const row = document.createElement('div');
+      row.className = 'existing-item';
+
+      const imgHtml = n.imageUrl ? `<img src="${escapeHtml(n.imageUrl)}" alt="">` : '';
+      row.innerHTML = `<div class="row-main">${imgHtml}<div><strong>${escapeHtml(n.title)}</strong><br><span class="muted">${escapeHtml(n.date)}</span></div></div>`;
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Löschen';
+      delBtn.type = 'button';
+      delBtn.className = 'btn btn-ghost small';
+      delBtn.addEventListener('click', async () => {
+        if (confirm('Diese Neuigkeit wirklich löschen?')) {
+          await deleteDoc(doc(db, "news", docSnap.id));
+          if (n.imagePath) {
+            try { await deleteObject(ref(storage, n.imagePath)); } catch (err) { console.warn('Bild konnte nicht gelöscht werden:', err); }
+          }
+          loadExisting();
+        }
+      });
+
+      row.appendChild(delBtn);
+      list.appendChild(row);
+    });
+  }
+</script>
+
+</body>
+</html>

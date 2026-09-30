@@ -372,6 +372,20 @@
     border:1px solid var(--line);
     border-radius:16px;
     padding:26px 28px;
+    overflow:hidden;
+  }
+  .news-card.has-image{
+    padding:0 0 26px;
+  }
+  .news-card img{
+    width:100%;
+    aspect-ratio:16/10;
+    object-fit:cover;
+    display:block;
+    margin-bottom:20px;
+  }
+  .news-card.has-image .news-body{
+    padding:0 28px;
   }
   .news-card h3{
     font-size:1.15rem;
@@ -801,11 +815,18 @@
       snap.forEach((docSnap) => {
         const n = docSnap.data();
         const card = document.createElement('article');
-        card.className = 'news-card';
+        const hasImage = !!n.imageUrl;
+        card.className = hasImage ? 'news-card has-image' : 'news-card';
+        const imgHtml = hasImage ? `<img src="${escapeHtml(n.imageUrl)}" alt="${escapeHtml(n.title)}" loading="lazy">` : '';
+        const bodyOpen = hasImage ? '<div class="news-body">' : '';
+        const bodyClose = hasImage ? '</div>' : '';
         card.innerHTML = `
+          ${imgHtml}
+          ${bodyOpen}
           <div class="news-date">${escapeHtml(n.date)}</div>
           <h3>${escapeHtml(n.title)}</h3>
           <p>${escapeHtml(n.text)}</p>
+          ${bodyClose}
         `;
         newsList.appendChild(card);
       });
