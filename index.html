@@ -105,7 +105,50 @@
     font-weight:500;
   }
   nav a:hover{color:var(--copper);}
-  @media(max-width:640px){ nav ul{gap:16px;} nav a{font-size:0.75rem;} }
+
+  /* Menü-Knopf (nur auf dem Handy sichtbar) */
+  .menu-toggle{
+    display:none;
+    width:44px; height:44px;
+    align-items:center; justify-content:center;
+    background:none; border:1px solid var(--line); border-radius:12px;
+    color:var(--espresso); cursor:pointer; padding:0;
+  }
+  .menu-toggle:focus-visible{ outline:2px solid var(--copper); outline-offset:2px; }
+  .menu-toggle .bars{ position:relative; width:18px; height:12px; }
+  .menu-toggle .bars span{
+    position:absolute; left:0; width:100%; height:2px; border-radius:2px;
+    background:currentColor; transition:transform .2s ease, opacity .2s ease;
+  }
+  .menu-toggle .bars span:nth-child(1){ top:0; }
+  .menu-toggle .bars span:nth-child(2){ top:5px; }
+  .menu-toggle .bars span:nth-child(3){ top:10px; }
+  header.menu-open .menu-toggle .bars span:nth-child(1){ transform:translateY(5px) rotate(45deg); }
+  header.menu-open .menu-toggle .bars span:nth-child(2){ opacity:0; }
+  header.menu-open .menu-toggle .bars span:nth-child(3){ transform:translateY(-5px) rotate(-45deg); }
+
+  @media(max-width:760px){
+    .nav{ padding:12px 16px; justify-content:flex-start; }
+    .menu-toggle{ display:inline-flex; margin-left:auto; }
+    nav ul{
+      display:none;
+      position:absolute; top:100%; left:0; right:0;
+      flex-direction:column; gap:0;
+      background:var(--cream);
+      border-bottom:1px solid var(--line);
+      box-shadow:0 18px 30px -20px rgba(58,42,30,0.35);
+      padding:4px 16px 12px;
+    }
+    header.menu-open nav ul{ display:flex; }
+    nav ul a{
+      display:block;
+      padding:14px 4px;
+      font-size:1rem;
+      border-bottom:1px solid var(--line);
+    }
+    nav ul li:last-child a{ border-bottom:none; }
+  }
+  @media(prefers-reduced-motion:reduce){ .menu-toggle .bars span{ transition:none; } }
 
   /* ---------- HERO ---------- */
   .hero{
@@ -544,8 +587,11 @@
       </svg>
       Rotondo
     </div>
+    <button class="menu-toggle" type="button" aria-label="Menü öffnen" aria-expanded="false" aria-controls="main-menu">
+      <span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>
+    </button>
     <nav>
-      <ul>
+      <ul id="main-menu">
         <li><a href="#story">Geschichte</a></li>
         <li><a href="#menu">Angebot</a></li>
         <li><a href="#news">Neuigkeiten</a></li>
@@ -805,6 +851,29 @@
   </section>
 
 </main>
+
+<script>
+  // Handy-Menü öffnen/schließen
+  (function(){
+    var header = document.querySelector('header');
+    var btn = document.querySelector('.menu-toggle');
+    if (!header || !btn) return;
+    function setOpen(open){
+      header.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+    }
+    btn.addEventListener('click', function(){
+      setOpen(!header.classList.contains('menu-open'));
+    });
+    document.querySelectorAll('#main-menu a').forEach(function(a){
+      a.addEventListener('click', function(){ setOpen(false); });
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
